@@ -17,7 +17,6 @@
                 --glass-bg: rgba(255, 255, 255, 0.05);
                 --border-color: rgba(255, 255, 255, 0.1);
                 --sidebar-width: 140px;
-                --twitter-blue: #1da1f2;
             }
 
             body {
@@ -29,37 +28,6 @@
                 display: flex;
                 height: 100vh;
                 overflow: hidden;
-            }
-
-            /* --- Sidebar UI --- */
-            .btn-x-news-main {
-                position: fixed;
-                z-index: 10000;
-                left: 12px;
-                bottom: 12px;
-                width: 116px;
-                background: #000;
-                border: 1px solid var(--twitter-blue);
-                color: white;
-                padding: 8px 0;
-                border-radius: 12px;
-                font-size: 11px;
-                font-weight: 800;
-                cursor: pointer;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                gap: 8px;
-                transition: 0.3s;
-                box-shadow: 0 0 10px rgba(29, 161, 242, 0.3);
-            }
-            .btn-x-news-main .x-icon {
-                background: white;
-                color: black;
-                border-radius: 4px;
-                padding: 0 4px;
-                font-size: 11px;
-                font-weight: 900;
             }
 
             #modeSwitcher {
@@ -250,7 +218,6 @@
                 background: var(--accent-blue) !important;
             }
 
-            /* --- 𝕏 스위처 프레임 --- */
             .floating-title {
                 position: absolute;
                 top: 15px;
@@ -265,54 +232,6 @@
                 min-width: 350px;
                 display: flex;
                 align-items: center;
-            }
-            .x-switch-group {
-                display: flex;
-                gap: 4px;
-                width: 100%;
-                justify-content: center;
-            }
-            .x-switch-btn {
-                background: none;
-                border: none;
-                color: white;
-                padding: 6px 18px;
-                border-radius: 25px;
-                font-size: 13px;
-                font-weight: 700;
-                cursor: pointer;
-                transition: 0.2s;
-                opacity: 0.7;
-            }
-            .x-switch-btn.active {
-                opacity: 1;
-                background: white;
-                color: var(--accent-red);
-            }
-
-            .x-refresh-floating {
-                position: fixed;
-                right: 25px;
-                bottom: 25px;
-                z-index: 9999;
-                background: var(--accent-green);
-                border: none;
-                color: white;
-                font-size: 20px;
-                font-weight: bold;
-                cursor: pointer;
-                width: 48px;
-                height: 48px;
-                border-radius: 50%;
-                transition: 0.3s;
-                display: none;
-                align-items: center;
-                justify-content: center;
-                box-shadow: 0 4px 15px rgba(48, 209, 88, 0.4);
-            }
-            .x-refresh-floating:hover {
-                transform: rotate(180deg) scale(1.1);
-                background: #28b84e;
             }
 
             #standardTitle {
@@ -388,8 +307,6 @@
         </style>
     </head>
     <body>
-        <button class="btn-x-news-main" onclick="enterXMode()"><span class="x-icon">𝕏</span> <span>News</span></button>
-
         <div class="sidebar">
             <div class="brand-title">PRO HUB v5.4</div>
             <div class="search-area">
@@ -431,17 +348,9 @@
             <div class="frame-wrap">
                 <div class="floating-title" id="pcFloatingTitle">
                     <a id="standardTitle" href="#" target="_blank">포텐</a>
-                    <div id="xSwitcher" style="display: none; width: 100%; align-items: center; padding: 0 4px">
-                        <div class="x-switch-group">
-                            <button class="x-switch-btn active" onclick="loadXCategory('news', this)">News</button>
-                            <button class="x-switch-btn" onclick="loadXCategory('football', this)">Football</button>
-                            <button class="x-switch-btn" onclick="loadXCategory('timeline', this)">Timeline</button>
-                        </div>
-                    </div>
                 </div>
                 <iframe id="pcMainFrame" src="https://m.fmkorea.com/" allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share; fullscreen" allowfullscreen></iframe>
             </div>
-            <button id="xRefreshBtn" class="x-refresh-floating" onclick="smartRefresh()" title="Feed Hard Refresh">↻</button>
         </main>
 
         <script>
@@ -450,24 +359,12 @@
                 editingIndex = -1;
             let cycleIntervalTimer = null,
                 cycleMode = 'all',
-                isXMode = false,
                 sortableInstance = null;
-
-            const xUrls = {
-                news: 'https://rss-hub-fawn-one.vercel.app/list/2009797206531027361',
-                football: 'https://rss-hub-fawn-one.vercel.app/twitter/list/1778686659091104131',
-                timeline: 'https://rss-hub-fawn-one.vercel.app/twitter/home',
-            };
 
             function openNote() {
                 const prevUrl = currentUrl;
                 const prevTitle = document.getElementById('standardTitle').innerText.replace(/'/g, "\\'");
-                const wasXMode = isXMode;
 
-                isXMode = false;
-                document.getElementById('standardTitle').style.display = 'block';
-                document.getElementById('xSwitcher').style.display = 'none';
-                document.getElementById('xRefreshBtn').style.display = 'none';
                 document.getElementById('standardTitle').innerText = 'Personal Note';
 
                 const savedNote = localStorage.getItem('myHubNote') || '';
@@ -495,7 +392,7 @@
                 <div class="note-container">
                     <textarea id="noteArea" placeholder="나만의 작업 메모를 남겨보세요...">${savedNote}</textarea>
                     <div class="actions">
-                        <button class="btn-close" onclick="const p = window.parent; ${wasXMode} ? p.enterXMode() : p.loadSite('${prevUrl}', '${prevTitle}')">Close</button>
+                        <button class="btn-close" onclick="window.parent.loadSite('${prevUrl}', '${prevTitle}')">Close</button>
                         <button class="btn-save" onclick="saveNote()">Save Note</button>
                     </div>
                 </div>
@@ -602,28 +499,7 @@
                 renderBookmarks();
             }
 
-            function enterXMode() {
-                isXMode = true;
-                document.getElementById('standardTitle').style.display = 'none';
-                document.getElementById('xSwitcher').style.display = 'flex';
-                document.getElementById('xRefreshBtn').style.display = 'flex';
-                loadXCategory('news', document.querySelector('#xSwitcher .x-switch-btn:nth-child(1)'));
-            }
-
-            function loadXCategory(type, btnEl) {
-                if (!isXMode) return;
-                document.querySelectorAll('.x-switch-btn').forEach((b) => b.classList.remove('active'));
-                btnEl.classList.add('active');
-                const url = xUrls[type];
-                currentUrl = url;
-                renderTwitterFeed(url);
-            }
-
             function loadSite(url, title) {
-                isXMode = false;
-                document.getElementById('standardTitle').style.display = 'block';
-                document.getElementById('xSwitcher').style.display = 'none';
-                document.getElementById('xRefreshBtn').style.display = 'none';
                 currentUrl = url;
                 const frame = document.getElementById('pcMainFrame');
                 document.getElementById('standardTitle').innerText = title;
@@ -638,115 +514,8 @@
                 renderBookmarks();
             }
 
-            async function renderTwitterFeed(url) {
-                const frame = document.getElementById('pcMainFrame');
-                try {
-                    const cacheBuster = (url.includes('?') ? '&' : '?') + '_t=' + Date.now();
-                    const res = await fetch(url + cacheBuster, { cache: 'no-store' });
-                    if (!res.ok) throw new Error();
-                    const text = await res.text();
-                    const xml = new DOMParser().parseFromString(text, 'text/xml');
-                    const items = xml.querySelectorAll('item');
-
-                    let cards = Array.from(items)
-                        .map((item) => {
-                            const rawDesc = item.querySelector('description')?.textContent || '';
-                            const link = item.querySelector('link')?.textContent || '#';
-                            const authorRaw = item.getElementsByTagName('dc:creator')[0]?.textContent || item.querySelector('author')?.textContent || '';
-                            const pubDateRaw = item.querySelector('pubDate')?.textContent || '';
-
-                            let authorHtml = `<span class="author-text">@${authorRaw}</span>`;
-                            if (authorRaw.includes('@')) {
-                                const handle = authorRaw.split('@')[1].split(' ')[0].trim();
-                                authorHtml = `<a href="https://x.com/${handle}" target="_blank" class="author-link">@${authorRaw}</a>`;
-                            }
-
-                            const tempDiv = document.createElement('div');
-                            tempDiv.innerHTML = rawDesc;
-
-                            const videoTags = tempDiv.querySelectorAll('video');
-                            let videoHtml = '';
-                            // [수정] 동영상 재생 성능 및 권한 개선
-                            videoTags.forEach((vid) => {
-                                vid.setAttribute('controls', '');
-                                vid.setAttribute('playsinline', '');
-                                vid.setAttribute('preload', 'metadata');
-                                vid.muted = true; // 브라우저 자동 재생 정책 대응
-                                videoHtml += vid.outerHTML;
-                                vid.remove();
-                            });
-
-                            const firstImg = tempDiv.querySelector('img');
-                            let imgHtml = '';
-                            if (firstImg && videoTags.length === 0) {
-                                imgHtml = `<div class="link-card-img"><img src="${firstImg.src}" loading="lazy"></div>`;
-                            }
-                            if (firstImg) firstImg.remove();
-
-                            let cleanText = tempDiv.innerHTML
-                                .replace(/<br\s*\/?>/gi, '\n')
-                                .replace(/<\/?[^>]+(>|$)/g, '')
-                                .trim();
-                            cleanText = cleanText.replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank" style="color: #1d9bf0; text-decoration: underline;">$1</a>');
-
-                            let formattedTime = '';
-                            if (pubDateRaw) {
-                                const d = new Date(pubDateRaw);
-                                formattedTime = d.toLocaleString('ko-KR', { hour12: false, month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
-                            }
-
-                            return `
-                <div class="card">
-                    <div class="card-header">
-                        ${authorHtml}
-                        <a href="${link}" target="_blank" class="view-btn">VIEW ↗</a>
-                    </div>
-                    ${cleanText ? `<div class="content">${cleanText}</div>` : ''}
-                    ${videoHtml}
-                    ${imgHtml}
-                    <div class="post-time">${formattedTime}</div>
-                </div>`;
-                        })
-                        .join('');
-
-                    frame.srcdoc = `<html><head><style>
-                body { background: #3a3a3c; color: #0f1419; font-family: -apple-system, sans-serif; padding: 85px 20px 40px; margin: 0; line-height: 1.6; }
-                .card { 
-                    background: #ffffff; 
-                    border: 1px solid #e1e8ed; 
-                    border-radius: 16px; 
-                    padding: 24px; 
-                    max-width: 600px; 
-                    margin: 0 auto 20px; 
-                    box-shadow: 0 4px 15px rgba(0,0,0,0.15);
-                }
-                .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
-                .author-link { color: #00ba7c; font-weight: 800; font-size: 16px; text-decoration: none; }
-                .author-link:hover { color: #1d9bf0; text-decoration: underline; }
-                .author-text { color: #00ba7c; font-weight: 800; font-size: 16px; }
-                .view-btn { 
-                    background: #f0f3f4; color: #536471; text-decoration: none; padding: 6px 14px; 
-                    border-radius: 30px; font-size: 11px; font-weight: 700;
-                }
-                .view-btn:hover { background: #1d9bf0; color: white; }
-                .content { font-size: 15px; line-height: 1.5; word-break: break-all; white-space: pre-wrap; margin-bottom: 15px; color: #0f1419; }
-                video { width: 100%; height: auto !important; display: block; border-radius: 12px; margin-top: 10px; background: #000; }
-                .link-card-img { width: 100%; border-radius: 12px; overflow: hidden; border: 1px solid #f0f3f4; margin-top: 10px; }
-                .link-card-img img { width: 100%; height: auto; display: block; object-fit: cover; }
-                .post-time { font-size: 12px; color: #8e99a1; margin-top: 15px; text-align: right; font-weight: 500; }
-            </style></head><body>${cards}</body></html>`;
-                    frame.style.opacity = '1';
-                } catch (e) {
-                    frame.src = url;
-                }
-            }
-
             function smartRefresh() {
-                if (isXMode) {
-                    const activeBtn = document.querySelector('.x-switch-btn.active');
-                    const type = activeBtn.innerText.toLowerCase();
-                    loadXCategory(type, activeBtn);
-                } else document.getElementById('pcMainFrame').src = currentUrl + (currentUrl.includes('?') ? '&' : '?') + 'r=' + Date.now();
+                document.getElementById('pcMainFrame').src = currentUrl + (currentUrl.includes('?') ? '&' : '?') + 'r=' + Date.now();
             }
 
             function applyPcCrop() {
