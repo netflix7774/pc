@@ -1,0 +1,800 @@
+<!doctype html>
+<html lang="ko">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+        <title>Pro Hub Desktop v5.4.12</title>
+        <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+        <style>
+            :root {
+                --bg-main: #0a0a0c;
+                --sidebar-bg: #161618;
+                --accent-blue: #0a84ff;
+                --accent-green: #30d158;
+                --accent-red: #d90429;
+                --text-primary: #ffffff;
+                --text-secondary: #8e8e93;
+                --glass-bg: rgba(255, 255, 255, 0.05);
+                --border-color: rgba(255, 255, 255, 0.1);
+                --sidebar-width: 140px;
+                --twitter-blue: #1da1f2;
+            }
+
+            body {
+                margin: 0;
+                padding: 0;
+                background-color: var(--bg-main);
+                color: var(--text-primary);
+                font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+                display: flex;
+                height: 100vh;
+                overflow: hidden;
+            }
+
+            /* --- Sidebar UI --- */
+            .btn-x-news-main {
+                position: fixed;
+                z-index: 10000;
+                left: 12px;
+                bottom: 12px;
+                width: 116px;
+                background: #000;
+                border: 1px solid var(--twitter-blue);
+                color: white;
+                padding: 8px 0;
+                border-radius: 12px;
+                font-size: 11px;
+                font-weight: 800;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 8px;
+                transition: 0.3s;
+                box-shadow: 0 0 10px rgba(29, 161, 242, 0.3);
+            }
+            .btn-x-news-main .x-icon {
+                background: white;
+                color: black;
+                border-radius: 4px;
+                padding: 0 4px;
+                font-size: 11px;
+                font-weight: 900;
+            }
+
+            #modeSwitcher {
+                background: rgba(255, 255, 255, 0.08);
+                backdrop-filter: blur(15px);
+                border: 1px solid rgba(255, 255, 255, 0.15);
+                color: var(--text-primary);
+                padding: 5px 12px;
+                border-radius: 20px;
+                font-size: 13px;
+                font-weight: 600;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
+
+            #noteBtn {
+                background: rgba(255, 255, 255, 0.08);
+                backdrop-filter: blur(15px);
+                border: 1px solid rgba(255, 255, 255, 0.15);
+                color: var(--text-primary);
+                padding: 5px 12px;
+                border-radius: 20px;
+                font-size: 13px;
+                font-weight: 600;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                margin-left: 8px;
+            }
+
+            .sidebar {
+                width: var(--sidebar-width);
+                background: var(--sidebar-bg);
+                border-right: 1px solid var(--border-color);
+                display: flex;
+                flex-direction: column;
+                padding: 12px;
+                z-index: 100;
+                box-sizing: border-box;
+            }
+            .brand-title {
+                font-size: 11px;
+                font-weight: 800;
+                margin-bottom: 15px;
+                color: var(--accent-blue);
+                text-align: center;
+            }
+            .search-area {
+                background: var(--glass-bg);
+                border-radius: 8px;
+                padding: 8px;
+                margin-bottom: 12px;
+                border: 1px solid var(--border-color);
+                width: 100%;
+                box-sizing: border-box;
+            }
+            .search-input-group {
+                display: flex;
+                gap: 3px;
+                width: 100%;
+            }
+            .search-input {
+                flex: 1;
+                min-width: 0;
+                background: #2c2c2e;
+                border: 1px solid var(--border-color);
+                color: white;
+                border-radius: 4px;
+                padding: 4px 6px;
+                font-size: 11px;
+                outline: none;
+                box-sizing: border-box;
+            }
+            .btn-search {
+                background: var(--accent-blue);
+                border: none;
+                color: white;
+                border-radius: 4px;
+                padding: 0 5px;
+                cursor: pointer;
+                flex-shrink: 0;
+            }
+            .nav-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 10px;
+                padding: 0 2px;
+            }
+            .nav-label {
+                font-size: 9px;
+                color: var(--text-secondary);
+                text-transform: uppercase;
+                font-weight: bold;
+            }
+            .btn-gear {
+                background: none;
+                border: none;
+                color: var(--text-secondary);
+                cursor: pointer;
+                font-size: 12px;
+                transition: 0.2s;
+                padding: 0;
+            }
+            .btn-gear.active {
+                color: var(--accent-blue);
+                transform: rotate(45deg);
+            }
+            #editForm {
+                display: none;
+                flex-direction: column;
+                gap: 6px;
+                padding: 8px;
+                background: #1c1c1e;
+                border-radius: 6px;
+                margin-bottom: 10px;
+                border: 1px solid var(--accent-blue);
+                width: 100%;
+                box-sizing: border-box;
+            }
+            #editForm input {
+                width: 100%;
+                background: #2c2c2e;
+                border: 1px solid var(--border-color);
+                color: white;
+                padding: 6px;
+                border-radius: 3px;
+                font-size: 10px;
+                outline: none;
+                box-sizing: border-box;
+            }
+            .btn-save {
+                width: 100%;
+                background: var(--accent-blue);
+                border: none;
+                color: white;
+                padding: 6px;
+                border-radius: 3px;
+                cursor: pointer;
+                font-size: 10px;
+                font-weight: bold;
+                box-sizing: border-box;
+            }
+            .bookmark-list {
+                display: flex;
+                flex-direction: column;
+                gap: 2px;
+                overflow-y: auto;
+                flex-grow: 1;
+                padding-bottom: 50px;
+                scrollbar-width: none;
+                width: 100%;
+            }
+            .bookmark-item {
+                padding: 4px 10px;
+                border-radius: 6px;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                font-size: 12px;
+                color: var(--text-secondary);
+                background: rgba(255, 255, 255, 0.02);
+                user-select: none;
+            }
+            .bookmark-item.active {
+                background: var(--accent-blue);
+                color: white;
+                font-weight: 600;
+            }
+            .bookmark-item.editing-now {
+                border: 1px dashed var(--accent-blue);
+                background: rgba(0, 122, 255, 0.1);
+            }
+            .del-btn {
+                color: var(--accent-red);
+                font-weight: 900;
+                font-size: 16px;
+                margin-left: 8px;
+                cursor: pointer;
+                padding: 0px 4px;
+            }
+            .sortable-ghost {
+                opacity: 0.3;
+                background: var(--accent-blue) !important;
+            }
+
+            /* --- 𝕏 스위처 프레임 --- */
+            .floating-title {
+                position: absolute;
+                top: 15px;
+                left: 50%;
+                transform: translateX(-50%);
+                z-index: 1000;
+                background: var(--accent-red);
+                padding: 4px 8px;
+                border-radius: 30px;
+                box-shadow: 0 8px 25px rgba(217, 4, 41, 0.5);
+                border: 1px solid rgba(255, 255, 255, 0.2);
+                min-width: 350px;
+                display: flex;
+                align-items: center;
+            }
+            .x-switch-group {
+                display: flex;
+                gap: 4px;
+                width: 100%;
+                justify-content: center;
+            }
+            .x-switch-btn {
+                background: none;
+                border: none;
+                color: white;
+                padding: 6px 18px;
+                border-radius: 25px;
+                font-size: 13px;
+                font-weight: 700;
+                cursor: pointer;
+                transition: 0.2s;
+                opacity: 0.7;
+            }
+            .x-switch-btn.active {
+                opacity: 1;
+                background: white;
+                color: var(--accent-red);
+            }
+
+            .x-refresh-floating {
+                position: fixed;
+                right: 25px;
+                bottom: 25px;
+                z-index: 9999;
+                background: var(--accent-green);
+                border: none;
+                color: white;
+                font-size: 20px;
+                font-weight: bold;
+                cursor: pointer;
+                width: 48px;
+                height: 48px;
+                border-radius: 50%;
+                transition: 0.3s;
+                display: none;
+                align-items: center;
+                justify-content: center;
+                box-shadow: 0 4px 15px rgba(48, 209, 88, 0.4);
+            }
+            .x-refresh-floating:hover {
+                transform: rotate(180deg) scale(1.1);
+                background: #28b84e;
+            }
+
+            #standardTitle {
+                color: white;
+                text-decoration: none;
+                font-size: 18px;
+                font-weight: 800;
+                padding: 6px 25px;
+                display: block;
+                width: 100%;
+                text-align: center;
+            }
+
+            .main-view {
+                flex-grow: 1;
+                display: flex;
+                flex-direction: column;
+                background: #000;
+                position: relative;
+            }
+            .top-bar {
+                height: 42px;
+                background: var(--sidebar-bg);
+                border-bottom: 1px solid var(--border-color);
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                padding: 0 15px;
+            }
+            .toolbar-group {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+            }
+            .input-mini {
+                width: 32px;
+                background: #2c2c2e;
+                border: 1px solid var(--border-color);
+                color: white;
+                border-radius: 3px;
+                padding: 2px;
+                text-align: center;
+                outline: none;
+                font-size: 10px;
+            }
+            .btn-top-action {
+                background: var(--glass-bg);
+                border: none;
+                color: white;
+                cursor: pointer;
+                padding: 4px 8px;
+                border-radius: 4px;
+                font-size: 10px;
+            }
+            .frame-wrap {
+                flex-grow: 1;
+                margin: 10px;
+                border-radius: 12px;
+                overflow: hidden;
+                position: relative;
+                border: 1px solid var(--border-color);
+                background: #ffffff;
+            }
+            iframe {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                border: none;
+                transition: opacity 0.3s;
+            }
+        </style>
+    </head>
+    <body>
+        <button class="btn-x-news-main" onclick="enterXMode()"><span class="x-icon">𝕏</span> <span>News</span></button>
+
+        <div class="sidebar">
+            <div class="brand-title">PRO HUB v5.4</div>
+            <div class="search-area">
+                <div class="search-input-group">
+                    <input type="text" id="searchKeyword" class="search-input" placeholder="Search" onkeypress="if (event.key === 'Enter') executeSearch();" />
+                    <button class="btn-search" onclick="executeSearch()">🔍</button>
+                </div>
+            </div>
+            <div class="nav-header">
+                <span class="nav-label">FAV</span>
+                <button id="gearBtn" class="btn-gear" onclick="toggleEditMode()">⚙️</button>
+            </div>
+            <div id="editForm">
+                <input type="text" id="pcBmName" placeholder="Name" />
+                <input type="text" id="pcBmUrl" placeholder="URL" />
+                <button class="btn-save" onclick="handleBookmarkSubmit()">Save</button>
+            </div>
+            <div class="bookmark-list" id="pcSortableList"></div>
+        </div>
+
+        <main class="main-view">
+            <header class="top-bar">
+                <div style="display: flex; align-items: center; margin-right: auto">
+                    <button id="modeSwitcher" onclick="goToMobileSite()"><span>📱</span> <span>Mobile Hub</span></button>
+                    <button id="noteBtn" onclick="openNote()"><span>📝</span> <span>Note</span></button>
+                </div>
+
+                <div class="toolbar-group">
+                    <div class="ctrl-item" style="font-size: 10px; color: var(--text-secondary)"><span>CROP</span><input type="number" id="pcCropValue" class="input-mini" value="0" oninput="applyPcCrop()" /></div>
+                    <div class="ctrl-item" style="border-left: 1px solid var(--border-color); padding-left: 10px; display: flex; gap: 5px">
+                        <button id="modeToggleBtn" class="btn-top-action" onclick="toggleCycleMode()">All</button>
+                        <input type="number" id="cycleInterval" class="input-mini" value="10" />
+                        <button id="cycleBtn" class="btn-top-action" onclick="toggleCycle()">Go</button>
+                    </div>
+                    <button onclick="smartRefresh()" class="btn-top-action">↻</button>
+                </div>
+            </header>
+
+            <div class="frame-wrap">
+                <div class="floating-title" id="pcFloatingTitle">
+                    <a id="standardTitle" href="#" target="_blank">포텐</a>
+                    <div id="xSwitcher" style="display: none; width: 100%; align-items: center; padding: 0 4px">
+                        <div class="x-switch-group">
+                            <button class="x-switch-btn active" onclick="loadXCategory('news', this)">News</button>
+                            <button class="x-switch-btn" onclick="loadXCategory('football', this)">Football</button>
+                            <button class="x-switch-btn" onclick="loadXCategory('timeline', this)">Timeline</button>
+                        </div>
+                    </div>
+                </div>
+                <iframe id="pcMainFrame" src="https://m.fmkorea.com/" allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share; fullscreen" allowfullscreen></iframe>
+            </div>
+            <button id="xRefreshBtn" class="x-refresh-floating" onclick="smartRefresh()" title="Feed Hard Refresh">↻</button>
+        </main>
+
+        <script>
+            let currentUrl = 'https://m.fmkorea.com/',
+                isEditMode = false,
+                editingIndex = -1;
+            let cycleIntervalTimer = null,
+                cycleMode = 'all',
+                isXMode = false,
+                sortableInstance = null;
+
+            const xUrls = {
+                news: 'https://rss-hub-fawn-one.vercel.app/list/2009797206531027360',
+                football: 'https://rss-hub-fawn-one.vercel.app/twitter/list/1778686659091104131',
+                timeline: 'https://rss-hub-fawn-one.vercel.app/twitter/home',
+            };
+
+            function openNote() {
+                const prevUrl = currentUrl;
+                const prevTitle = document.getElementById('standardTitle').innerText.replace(/'/g, "\\'");
+                const wasXMode = isXMode;
+
+                isXMode = false;
+                document.getElementById('standardTitle').style.display = 'block';
+                document.getElementById('xSwitcher').style.display = 'none';
+                document.getElementById('xRefreshBtn').style.display = 'none';
+                document.getElementById('standardTitle').innerText = 'Personal Note';
+
+                const savedNote = localStorage.getItem('myHubNote') || '';
+                const frame = document.getElementById('pcMainFrame');
+                frame.style.opacity = '0';
+
+                frame.srcdoc = `
+            <html>
+            <head>
+                <style>
+                    body { background: #f8f9fa; color: #0f1419; font-family: -apple-system, sans-serif; display: flex; flex-direction: column; height: 100vh; margin: 0; padding: 60px 20px 20px; box-sizing: border-box; }
+                    .note-container { flex-grow: 1; display: flex; flex-direction: column; gap: 15px; max-width: 800px; margin: 0 auto; width: 100%; animation: fadeIn 0.4s ease; }
+                    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+                    textarea { flex-grow: 1; background: #ffffff; border: 1px solid #e1e8ed; border-radius: 16px; color: #0f1419; padding: 25px; font-size: 16px; line-height: 1.6; outline: none; resize: none; transition: 0.3s; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+                    textarea:focus { border-color: #0a84ff; box-shadow: 0 4px 20px rgba(10, 132, 255, 0.15); }
+                    .actions { display: flex; justify-content: flex-end; gap: 12px; margin-top: 10px; }
+                    button { padding: 12px 28px; border-radius: 30px; font-weight: 700; cursor: pointer; border: none; transition: 0.2s; font-size: 14px; }
+                    .btn-save { background: #0a84ff; color: white; box-shadow: 0 4px 10px rgba(10, 132, 255, 0.3); }
+                    .btn-save:hover { background: #0070e0; transform: scale(1.03); }
+                    .btn-close { background: #f0f3f4; color: #536471; }
+                    .btn-close:hover { background: #e2e5e7; }
+                </style>
+            </head>
+            <body>
+                <div class="note-container">
+                    <textarea id="noteArea" placeholder="나만의 작업 메모를 남겨보세요...">${savedNote}</textarea>
+                    <div class="actions">
+                        <button class="btn-close" onclick="const p = window.parent; ${wasXMode} ? p.enterXMode() : p.loadSite('${prevUrl}', '${prevTitle}')">Close</button>
+                        <button class="btn-save" onclick="saveNote()">Save Note</button>
+                    </div>
+                </div>
+                <script>
+                    function saveNote() {
+                        const val = document.getElementById('noteArea').value;
+                        localStorage.setItem('myHubNote', val);
+                        alert('메모가 안전하게 저장되었습니다.');
+                    }
+                <\/script>
+            </body>
+            </html>
+        `;
+                setTimeout(() => {
+                    frame.style.opacity = '1';
+                }, 50);
+            }
+
+            function initSortable() {
+                const el = document.getElementById('pcSortableList');
+                if (sortableInstance) sortableInstance.destroy();
+                sortableInstance = new Sortable(el, {
+                    animation: 350,
+                    disabled: !isEditMode,
+                    ghostClass: 'sortable-ghost',
+                    forceFallback: true,
+                    filter: '.del-btn',
+                    onEnd: function () {
+                        const items = el.querySelectorAll('.bookmark-item');
+                        const newOrder = Array.from(items).map((item) => ({ name: item.dataset.name, url: item.dataset.url }));
+                        localStorage.setItem('myHubBookmarks', JSON.stringify(newOrder));
+                    },
+                });
+            }
+
+            function renderBookmarks() {
+                const container = document.getElementById('pcSortableList'),
+                    bms = JSON.parse(localStorage.getItem('myHubBookmarks')) || [];
+                container.innerHTML = bms
+                    .map((bm, index) => {
+                        const isActive = !isEditMode && bm.url === currentUrl ? 'active' : '';
+                        const isEditing = editingIndex === index ? 'editing-now' : '';
+                        return `<div class="bookmark-item ${isActive} ${isEditing}" onclick="handleItemClick(${index}, event)" data-name="${bm.name}" data-url="${bm.url}">
+                        <span>${bm.name}</span>${isEditMode ? `<div class="del-btn" onclick="deleteBookmark(${index}, event)">×</div>` : ''}
+                    </div>`;
+                    })
+                    .join('');
+                initSortable();
+            }
+
+            function handleItemClick(idx, e) {
+                if (e.target.classList.contains('del-btn')) return;
+                const bms = JSON.parse(localStorage.getItem('myHubBookmarks'));
+                if (isEditMode) {
+                    if (editingIndex === idx) {
+                        editingIndex = -1;
+                        document.getElementById('pcBmName').value = '';
+                        document.getElementById('pcBmUrl').value = '';
+                    } else {
+                        editingIndex = idx;
+                        document.getElementById('pcBmName').value = bms[idx].name;
+                        document.getElementById('pcBmUrl').value = bms[idx].url.replace(/^https?:\/\//i, '');
+                    }
+                    renderBookmarks();
+                } else {
+                    loadSite(bms[idx].url, bms[idx].name);
+                }
+            }
+
+            function deleteBookmark(idx, e) {
+                e.stopPropagation();
+                if (!confirm('정말 삭제하시겠습니까?')) return;
+                let bms = JSON.parse(localStorage.getItem('myHubBookmarks'));
+                bms.splice(idx, 1);
+                localStorage.setItem('myHubBookmarks', JSON.stringify(bms));
+                if (editingIndex === idx) editingIndex = -1;
+                renderBookmarks();
+            }
+
+            function toggleEditMode() {
+                isEditMode = !isEditMode;
+                document.getElementById('gearBtn').classList.toggle('active', isEditMode);
+                document.getElementById('editForm').style.display = isEditMode ? 'flex' : 'none';
+                if (!isEditMode) {
+                    editingIndex = -1;
+                    document.getElementById('pcBmName').value = '';
+                    document.getElementById('pcBmUrl').value = '';
+                }
+                renderBookmarks();
+            }
+
+            function handleBookmarkSubmit() {
+                const name = document.getElementById('pcBmName').value.trim();
+                let url = document.getElementById('pcBmUrl').value.trim();
+                if (!name || !url) return;
+                if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
+                let bms = JSON.parse(localStorage.getItem('myHubBookmarks')) || [];
+                if (editingIndex > -1) bms[editingIndex] = { name, url };
+                else bms.push({ name, url });
+                localStorage.setItem('myHubBookmarks', JSON.stringify(bms));
+                editingIndex = -1;
+                document.getElementById('pcBmName').value = '';
+                document.getElementById('pcBmUrl').value = '';
+                renderBookmarks();
+            }
+
+            function enterXMode() {
+                isXMode = true;
+                document.getElementById('standardTitle').style.display = 'none';
+                document.getElementById('xSwitcher').style.display = 'flex';
+                document.getElementById('xRefreshBtn').style.display = 'flex';
+                loadXCategory('news', document.querySelector('#xSwitcher .x-switch-btn:nth-child(1)'));
+            }
+
+            function loadXCategory(type, btnEl) {
+                if (!isXMode) return;
+                document.querySelectorAll('.x-switch-btn').forEach((b) => b.classList.remove('active'));
+                btnEl.classList.add('active');
+                const url = xUrls[type];
+                currentUrl = url;
+                renderTwitterFeed(url);
+            }
+
+            function loadSite(url, title) {
+                isXMode = false;
+                document.getElementById('standardTitle').style.display = 'block';
+                document.getElementById('xSwitcher').style.display = 'none';
+                document.getElementById('xRefreshBtn').style.display = 'none';
+                currentUrl = url;
+                const frame = document.getElementById('pcMainFrame');
+                document.getElementById('standardTitle').innerText = title;
+                document.getElementById('standardTitle').href = url;
+                frame.style.opacity = '0';
+                frame.removeAttribute('srcdoc');
+                frame.src = url;
+                frame.onload = () => {
+                    frame.style.opacity = '1';
+                    applyPcCrop();
+                };
+                renderBookmarks();
+            }
+
+            async function renderTwitterFeed(url) {
+                const frame = document.getElementById('pcMainFrame');
+                try {
+                    const cacheBuster = (url.includes('?') ? '&' : '?') + '_t=' + Date.now();
+                    const res = await fetch(url + cacheBuster, { cache: 'no-store' });
+                    if (!res.ok) throw new Error();
+                    const text = await res.text();
+                    const xml = new DOMParser().parseFromString(text, 'text/xml');
+                    const items = xml.querySelectorAll('item');
+
+                    let cards = Array.from(items)
+                        .map((item) => {
+                            const rawDesc = item.querySelector('description')?.textContent || '';
+                            const link = item.querySelector('link')?.textContent || '#';
+                            const authorRaw = item.getElementsByTagName('dc:creator')[0]?.textContent || item.querySelector('author')?.textContent || '';
+                            const pubDateRaw = item.querySelector('pubDate')?.textContent || '';
+
+                            let authorHtml = `<span class="author-text">@${authorRaw}</span>`;
+                            if (authorRaw.includes('@')) {
+                                const handle = authorRaw.split('@')[1].split(' ')[0].trim();
+                                authorHtml = `<a href="https://x.com/${handle}" target="_blank" class="author-link">@${authorRaw}</a>`;
+                            }
+
+                            const tempDiv = document.createElement('div');
+                            tempDiv.innerHTML = rawDesc;
+
+                            const videoTags = tempDiv.querySelectorAll('video');
+                            let videoHtml = '';
+                            // [수정] 동영상 재생 성능 및 권한 개선
+                            videoTags.forEach((vid) => {
+                                vid.setAttribute('controls', '');
+                                vid.setAttribute('playsinline', '');
+                                vid.setAttribute('preload', 'metadata');
+                                vid.muted = true; // 브라우저 자동 재생 정책 대응
+                                videoHtml += vid.outerHTML;
+                                vid.remove();
+                            });
+
+                            const firstImg = tempDiv.querySelector('img');
+                            let imgHtml = '';
+                            if (firstImg && videoTags.length === 0) {
+                                imgHtml = `<div class="link-card-img"><img src="${firstImg.src}" loading="lazy"></div>`;
+                            }
+                            if (firstImg) firstImg.remove();
+
+                            let cleanText = tempDiv.innerHTML
+                                .replace(/<br\s*\/?>/gi, '\n')
+                                .replace(/<\/?[^>]+(>|$)/g, '')
+                                .trim();
+                            cleanText = cleanText.replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank" style="color: #1d9bf0; text-decoration: underline;">$1</a>');
+
+                            let formattedTime = '';
+                            if (pubDateRaw) {
+                                const d = new Date(pubDateRaw);
+                                formattedTime = d.toLocaleString('ko-KR', { hour12: false, month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+                            }
+
+                            return `
+                <div class="card">
+                    <div class="card-header">
+                        ${authorHtml}
+                        <a href="${link}" target="_blank" class="view-btn">VIEW ↗</a>
+                    </div>
+                    ${cleanText ? `<div class="content">${cleanText}</div>` : ''}
+                    ${videoHtml}
+                    ${imgHtml}
+                    <div class="post-time">${formattedTime}</div>
+                </div>`;
+                        })
+                        .join('');
+
+                    frame.srcdoc = `<html><head><style>
+                body { background: #3a3a3c; color: #0f1419; font-family: -apple-system, sans-serif; padding: 85px 20px 40px; margin: 0; line-height: 1.6; }
+                .card { 
+                    background: #ffffff; 
+                    border: 1px solid #e1e8ed; 
+                    border-radius: 16px; 
+                    padding: 24px; 
+                    max-width: 600px; 
+                    margin: 0 auto 20px; 
+                    box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+                }
+                .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+                .author-link { color: #00ba7c; font-weight: 800; font-size: 16px; text-decoration: none; }
+                .author-link:hover { color: #1d9bf0; text-decoration: underline; }
+                .author-text { color: #00ba7c; font-weight: 800; font-size: 16px; }
+                .view-btn { 
+                    background: #f0f3f4; color: #536471; text-decoration: none; padding: 6px 14px; 
+                    border-radius: 30px; font-size: 11px; font-weight: 700;
+                }
+                .view-btn:hover { background: #1d9bf0; color: white; }
+                .content { font-size: 15px; line-height: 1.5; word-break: break-all; white-space: pre-wrap; margin-bottom: 15px; color: #0f1419; }
+                video { width: 100%; height: auto !important; display: block; border-radius: 12px; margin-top: 10px; background: #000; }
+                .link-card-img { width: 100%; border-radius: 12px; overflow: hidden; border: 1px solid #f0f3f4; margin-top: 10px; }
+                .link-card-img img { width: 100%; height: auto; display: block; object-fit: cover; }
+                .post-time { font-size: 12px; color: #8e99a1; margin-top: 15px; text-align: right; font-weight: 500; }
+            </style></head><body>${cards}</body></html>`;
+                    frame.style.opacity = '1';
+                } catch (e) {
+                    frame.src = url;
+                }
+            }
+
+            function smartRefresh() {
+                if (isXMode) {
+                    const activeBtn = document.querySelector('.x-switch-btn.active');
+                    const type = activeBtn.innerText.toLowerCase();
+                    loadXCategory(type, activeBtn);
+                } else document.getElementById('pcMainFrame').src = currentUrl + (currentUrl.includes('?') ? '&' : '?') + 'r=' + Date.now();
+            }
+
+            function applyPcCrop() {
+                const val = document.getElementById('pcCropValue').value || 0;
+                const frame = document.getElementById('pcMainFrame');
+                frame.style.top = `-${val}%`;
+                frame.style.height = `${100 + parseInt(val)}%`;
+            }
+            function toggleCycleMode() {
+                const btn = document.getElementById('modeToggleBtn');
+                cycleMode = cycleMode === 'all' ? 'single' : 'all';
+                btn.innerText = cycleMode === 'all' ? 'All' : 'One';
+            }
+            function toggleCycle() {
+                const btn = document.getElementById('cycleBtn');
+                if (cycleIntervalTimer) {
+                    clearInterval(cycleIntervalTimer);
+                    cycleIntervalTimer = null;
+                    btn.innerText = 'Go';
+                } else {
+                    let sec = parseInt(document.getElementById('cycleInterval').value) || 10;
+                    btn.innerText = 'Stop';
+                    cycleIntervalTimer = setInterval(() => {
+                        if (cycleMode === 'all') {
+                            const bms = JSON.parse(localStorage.getItem('myHubBookmarks'));
+                            let idx = bms.findIndex((bm) => bm.url === currentUrl);
+                            let next = (idx + 1) % bms.length;
+                            loadSite(bms[next].url, bms[next].name);
+                        } else smartRefresh();
+                    }, sec * 1000);
+                }
+            }
+            function executeSearch() {
+                const input = document.getElementById('searchKeyword'),
+                    keyword = input.value.trim();
+                if (!keyword) return;
+                loadSite('https://m.fmkorea.com/search.php?act=IS&is_keyword=' + encodeURIComponent(keyword), 'Search Result');
+                input.value = '';
+            }
+            function goToMobileSite() {
+                window.location.href = 'https://netflix7774.github.io/my-mdashboard/index.html';
+            }
+
+            window.onload = () => {
+                if (!localStorage.getItem('myHubBookmarks')) localStorage.setItem('myHubBookmarks', JSON.stringify([{ name: '포텐', url: 'https://m.fmkorea.com/' }]));
+                renderBookmarks();
+                loadSite(currentUrl, '포텐');
+            };
+        </script>
+    </body>
+</html>
