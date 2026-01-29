@@ -392,6 +392,29 @@
                 position: relative;
                 background: #ffffff;
                 overflow: hidden;
+                transition: box-shadow 0.3s;
+                cursor: pointer;
+            }
+
+            /* 프레임 선택 상태 표시 */
+            .frame-container.selected {
+                box-shadow: inset 0 0 0 3px var(--accent-blue);
+                z-index: 5;
+            }
+
+            /* 프레임 선택을 위한 오버레이 */
+            .frame-overlay {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                z-index: 2;
+                background: transparent;
+            }
+
+            .frame-container.selected .frame-overlay {
+                pointer-events: none;
             }
 
             /* 단일 모드 */
@@ -623,7 +646,7 @@
 
             // 화면 분할 관련 변수
             let splitMode = 'single';
-            let currentFrameIndex = 0;
+            let selectedFrameIndex = 0; // 현재 선택된 프레임 인덱스
             let frameUrls = ['https://m.fmkorea.com/', '', '', ''];
             let frameTitles = ['포텐', '', '', ''];
             let resizeState = {
@@ -805,6 +828,19 @@
                 renderBookmarks();
             }
 
+            // 프레임 선택 함수
+            function selectFrame(index) {
+                selectedFrameIndex = index;
+                // 모든 프레임의 선택 상태 제거
+                document.querySelectorAll('.frame-container').forEach((container, i) => {
+                    if (i === index) {
+                        container.classList.add('selected');
+                    } else {
+                        container.classList.remove('selected');
+                    }
+                });
+            }
+
             function loadSite(url, title) {
                 if (splitMode === 'single') {
                     // 단일 모드: 기존 방식대로
@@ -827,15 +863,12 @@
                         applyPcCrop();
                     };
                 } else {
-                    // 분할 모드: 순환 방식
-                    const maxFrames = splitMode === 'split2' ? 2 : splitMode === 'split3' ? 3 : splitMode === 'horizontal' ? 4 : 4;
-                    currentFrameIndex = (currentFrameIndex + 1) % maxFrames;
+                    // 분할 모드: 선택된 프레임에 로드
+                    frameUrls[selectedFrameIndex] = url;
+                    frameTitles[selectedFrameIndex] = title;
                     
-                    frameUrls[currentFrameIndex] = url;
-                    frameTitles[currentFrameIndex] = title;
-                    
-                    const frame = document.getElementById(`frame-${currentFrameIndex}`);
-                    const titleEl = document.getElementById(`title-${currentFrameIndex}`);
+                    const frame = document.getElementById(`frame-${selectedFrameIndex}`);
+                    const titleEl = document.getElementById(`title-${selectedFrameIndex}`);
                     
                     if (titleEl) {
                         titleEl.innerText = title;
@@ -972,7 +1005,7 @@
             // 화면 분할 모드 설정
             function setSplitMode(mode) {
                 splitMode = mode;
-                currentFrameIndex = 0; // 프레임 인덱스 초기화
+                selectedFrameIndex = 0; // 프레임 선택 인덱스 초기화
                 
                 // 드롭다운 닫기
                 document.getElementById('splitDropdown').classList.remove('show');
@@ -1034,6 +1067,7 @@
                         container.style.width = `${frameSizes.split2[i]}%`;
                         
                         container.innerHTML = `
+                            <div class="frame-overlay" onclick="selectFrame(${i})"></div>
                             <div class="floating-title" id="title-container-${i}">
                                 <a id="title-${i}" href="${frameUrls[i] || '#'}" target="_blank">${frameTitles[i] || `프레임 ${i + 1}`}</a>
                             </div>
@@ -1052,6 +1086,8 @@
                             wrap.appendChild(resizer);
                         }
                     }
+                    // 첫 번째 프레임 선택
+                    selectFrame(0);
                 } else if (splitMode === 'split3') {
                     // 세로 3분할 (1x3)
                     for (let i = 0; i < 3; i++) {
@@ -1061,6 +1097,7 @@
                         container.style.width = `${frameSizes.split3[i]}%`;
                         
                         container.innerHTML = `
+                            <div class="frame-overlay" onclick="selectFrame(${i})"></div>
                             <div class="floating-title" id="title-container-${i}">
                                 <a id="title-${i}" href="${frameUrls[i] || '#'}" target="_blank">${frameTitles[i] || `프레임 ${i + 1}`}</a>
                             </div>
@@ -1079,6 +1116,8 @@
                             wrap.appendChild(resizer);
                         }
                     }
+                    // 첫 번째 프레임 선택
+                    selectFrame(0);
                 } else if (splitMode === 'horizontal') {
                     // 세로 4분할 (1x4)
                     for (let i = 0; i < 4; i++) {
@@ -1088,6 +1127,7 @@
                         container.style.width = `${frameSizes.horizontal[i]}%`;
                         
                         container.innerHTML = `
+                            <div class="frame-overlay" onclick="selectFrame(${i})"></div>
                             <div class="floating-title" id="title-container-${i}">
                                 <a id="title-${i}" href="${frameUrls[i] || '#'}" target="_blank">${frameTitles[i] || `프레임 ${i + 1}`}</a>
                             </div>
@@ -1106,6 +1146,8 @@
                             wrap.appendChild(resizer);
                         }
                     }
+                    // 첫 번째 프레임 선택
+                    selectFrame(0);
                 } else if (splitMode === 'grid') {
                     // 2x2 그리드
                     for (let i = 0; i < 4; i++) {
@@ -1126,6 +1168,7 @@
                         }
                         
                         container.innerHTML = `
+                            <div class="frame-overlay" onclick="selectFrame(${i})"></div>
                             <div class="floating-title" id="title-container-${i}">
                                 <a id="title-${i}" href="${frameUrls[i] || '#'}" target="_blank">${frameTitles[i] || `프레임 ${i + 1}`}</a>
                             </div>
@@ -1161,6 +1204,9 @@
                     vResizer2.style.height = `${100 - frameSizes.grid[0]}%`;
                     vResizer2.addEventListener('mousedown', startResize);
                     wrap.appendChild(vResizer2);
+                    
+                    // 첫 번째 프레임 선택
+                    selectFrame(0);
                 }
             }
 
