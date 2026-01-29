@@ -398,7 +398,7 @@
 
             /* 프레임 선택 상태 표시 */
             .frame-container.selected {
-                box-shadow: inset 0 0 0 3px var(--accent-blue);
+                box-shadow: inset 0 0 0 4px var(--accent-blue);
                 z-index: 5;
             }
 
@@ -411,6 +411,11 @@
                 height: 100%;
                 z-index: 2;
                 background: transparent;
+                transition: background 0.2s;
+            }
+
+            .frame-overlay:hover {
+                background: rgba(10, 132, 255, 0.05);
             }
 
             .frame-container.selected .frame-overlay {
@@ -880,6 +885,7 @@
                     frame.src = url;
                     frame.onload = () => {
                         frame.style.opacity = '1';
+                        applyPcCrop();
                     };
                 }
                 
@@ -888,7 +894,9 @@
 
             function smartRefresh() {
                 if (splitMode === 'single') {
-                    document.getElementById('frame-0').src = currentUrl + (currentUrl.includes('?') ? '&' : '?') + 'r=' + Date.now();
+                    const frame = document.getElementById('frame-0');
+                    frame.src = currentUrl + (currentUrl.includes('?') ? '&' : '?') + 'r=' + Date.now();
+                    frame.onload = () => applyPcCrop();
                 } else {
                     // 분할 모드에서는 현재 보이는 모든 프레임 새로고침
                     const maxFrames = splitMode === 'split2' ? 2 : splitMode === 'split3' ? 3 : 4;
@@ -896,6 +904,7 @@
                         const frame = document.getElementById(`frame-${i}`);
                         if (frameUrls[i] && frame) {
                             frame.src = frameUrls[i] + (frameUrls[i].includes('?') ? '&' : '?') + 'r=' + Date.now();
+                            frame.onload = () => applyPcCrop();
                         }
                     }
                 }
@@ -903,10 +912,23 @@
 
             function applyPcCrop() {
                 const val = document.getElementById('pcCropValue').value || 0;
+                
                 if (splitMode === 'single') {
                     const frame = document.getElementById('frame-0');
-                    frame.style.top = `-${val}%`;
-                    frame.style.height = `${100 + parseInt(val)}%`;
+                    if (frame) {
+                        frame.style.top = `-${val}%`;
+                        frame.style.height = `${100 + parseInt(val)}%`;
+                    }
+                } else {
+                    // 분할 모드에서는 모든 프레임에 적용
+                    const maxFrames = splitMode === 'split2' ? 2 : splitMode === 'split3' ? 3 : 4;
+                    for (let i = 0; i < maxFrames; i++) {
+                        const frame = document.getElementById(`frame-${i}`);
+                        if (frame) {
+                            frame.style.top = `-${val}%`;
+                            frame.style.height = `${100 + parseInt(val)}%`;
+                        }
+                    }
                 }
             }
 
@@ -946,6 +968,7 @@
                                 const frame = document.getElementById(`frame-${i}`);
                                 if (frameUrls[i] && frame) {
                                     frame.src = frameUrls[i] + (frameUrls[i].includes('?') ? '&' : '?') + 'r=' + Date.now();
+                                    frame.onload = () => applyPcCrop();
                                 }
                             }
                         }
@@ -1208,6 +1231,9 @@
                     // 첫 번째 프레임 선택
                     selectFrame(0);
                 }
+                
+                // 프레임 렌더링 후 crop 적용
+                setTimeout(() => applyPcCrop(), 100);
             }
 
             // 리사이즈 시작
