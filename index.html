@@ -174,6 +174,28 @@
                 font-weight: bold;
                 box-sizing: border-box;
             }
+
+            /* 추가된 버튼 스타일 */
+            .sync-group {
+                display: flex;
+                gap: 4px;
+                margin-top: 4px;
+            }
+            .btn-sync {
+                flex: 1;
+                background: var(--glass-bg);
+                border: 1px solid var(--border-color);
+                color: var(--text-secondary);
+                padding: 4px;
+                border-radius: 3px;
+                cursor: pointer;
+                font-size: 9px;
+            }
+            .btn-sync:hover {
+                background: rgba(255,255,255,0.1);
+                color: white;
+            }
+
             .bookmark-list {
                 display: flex;
                 flex-direction: column;
@@ -323,6 +345,10 @@
                 <input type="text" id="pcBmName" placeholder="Name" />
                 <input type="text" id="pcBmUrl" placeholder="URL" />
                 <button class="btn-save" onclick="handleBookmarkSubmit()">Save</button>
+                <div class="sync-group">
+                    <button class="btn-sync" onclick="exportBookmarks()">Export</button>
+                    <button class="btn-sync" onclick="importBookmarks()">Import</button>
+                </div>
             </div>
             <div class="bookmark-list" id="pcSortableList"></div>
         </div>
@@ -557,6 +583,49 @@
             }
             function goToMobileSite() {
                 window.location.href = 'https://netflix7774.github.io/mobile/index.html';
+            }
+
+            /* --- 추가된 데이터 관리 함수 --- */
+            function exportBookmarks() {
+                const bms = localStorage.getItem('myHubBookmarks');
+                if (!bms) return alert('내보낼 북마크가 없습니다.');
+                
+                const blob = new Blob([bms], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `pro_hub_bookmarks_${new Date().toISOString().slice(0,10)}.json`;
+                a.click();
+                URL.revokeObjectURL(url);
+            }
+
+            function importBookmarks() {
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.accept = '.json';
+                input.onchange = e => {
+                    const file = e.target.files[0];
+                    if (!file) return;
+                    const reader = new FileReader();
+                    reader.onload = event => {
+                        try {
+                            const data = JSON.parse(event.target.result);
+                            if (Array.isArray(data)) {
+                                if(confirm('기존 북마크를 덮어쓰고 새로 가져오시겠습니까?')) {
+                                    localStorage.setItem('myHubBookmarks', JSON.stringify(data));
+                                    renderBookmarks();
+                                    alert('북마크 동기화가 완료되었습니다.');
+                                }
+                            } else {
+                                alert('유효한 북마크 형식이 아닙니다.');
+                            }
+                        } catch (err) {
+                            alert('파일 읽기 오류: JSON 형식을 확인해주세요.');
+                        }
+                    };
+                    reader.readAsText(file);
+                };
+                input.click();
             }
 
             window.onload = () => {
