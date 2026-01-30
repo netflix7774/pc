@@ -268,6 +268,7 @@
                 display: flex;
                 align-items: center;
                 justify-content: center;
+                pointer-events: none;
             }
 
             .floating-title a {
@@ -281,6 +282,7 @@
                 width: 100%;
                 text-align: center;
                 border-radius: 30px;
+                pointer-events: auto;
             }
 
             /* 1x4 모드에서 제목 크기 */
@@ -393,33 +395,41 @@
                 background: #ffffff;
                 overflow: hidden;
                 transition: box-shadow 0.3s;
-                cursor: pointer;
             }
 
-            /* 프레임 선택 상태 표시 */
-            .frame-container.selected {
-                box-shadow: inset 0 0 0 4px var(--accent-blue);
-                z-index: 5;
-            }
-
-            /* 프레임 선택을 위한 오버레이 */
-            .frame-overlay {
+            /* 프레임 선택을 위한 클릭 영역 */
+            .frame-selector {
                 position: absolute;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                z-index: 2;
-                background: transparent;
-                transition: background 0.2s;
+                top: 10px;
+                left: 10px;
+                width: 30px;
+                height: 30px;
+                background: rgba(10, 132, 255, 0.3);
+                border: 2px solid var(--accent-blue);
+                border-radius: 50%;
+                z-index: 999;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 14px;
+                font-weight: bold;
+                color: white;
+                transition: all 0.2s;
             }
 
-            .frame-overlay:hover {
-                background: rgba(10, 132, 255, 0.05);
+            .frame-selector:hover {
+                background: rgba(10, 132, 255, 0.6);
+                transform: scale(1.1);
             }
 
-            .frame-container.selected .frame-overlay {
-                pointer-events: none;
+            .frame-container.selected .frame-selector {
+                background: var(--accent-blue);
+            }
+
+            /* 단일 모드에서는 선택 버튼 숨김 */
+            .split-single .frame-selector {
+                display: none;
             }
 
             /* 단일 모드 */
@@ -651,7 +661,7 @@
 
             // 화면 분할 관련 변수
             let splitMode = 'single';
-            let selectedFrameIndex = 0; // 현재 선택된 프레임 인덱스
+            let selectedFrameIndex = 0;
             let frameUrls = ['https://m.fmkorea.com/', '', '', ''];
             let frameTitles = ['포텐', '', '', ''];
             let resizeState = {
@@ -662,13 +672,67 @@
                 direction: ''
             };
 
-            // 프레임 크기 비율 (초기값 50:50)
+            // 프레임 크기 비율
             let frameSizes = {
-                split2: [50, 50], // 1x2
-                split3: [33.333, 33.333, 33.334], // 1x3
-                horizontal: [25, 25, 25, 25], // 1x4
-                grid: [50, 50, 50, 50] // 2x2
+                split2: [50, 50],
+                split3: [33.333, 33.333, 33.334],
+                horizontal: [25, 25, 25, 25],
+                grid: [50, 50, 50, 50]
             };
+
+            // 스크롤 위치 저장 함수
+            function saveScrollPosition(frameIndex) {
+                const url = frameUrls[frameIndex];
+                if (!url) return;
+                
+                const frame = document.getElementById(`frame-${frameIndex}`);
+                if (!frame) return;
+                
+                try {
+                    const scrollY = frame.contentWindow.scrollY || frame.contentWindow.pageYOffset || 0;
+                    const scrollData = JSON.parse(localStorage.getItem('frameScrollPositions')) || {};
+                    scrollData[url] = scrollY;
+                    localStorage.setItem('frameScrollPositions', JSON.stringify(scrollData));
+                } catch (e) {
+                    // Cross-origin 제한으로 실패할 수 있음
+                }
+            }
+
+            // 스크롤 위치 복원 함수
+            function restoreScrollPosition(frameIndex) {
+                const url = frameUrls[frameIndex];
+                if (!url) return;
+                
+                const frame = document.getElementById(`frame-${frameIndex}`);
+                if (!frame) return;
+                
+                try {
+                    const scrollData = JSON.parse(localStorage.getItem('frameScrollPositions')) || {};
+                    const scrollY = scrollData[url];
+                    
+                    if (scrollY) {
+                        setTimeout(() => {
+                            try {
+                                frame.contentWindow.scrollTo(0, scrollY);
+                            } catch (e) {}
+                        }, 500);
+                    }
+                } catch (e) {
+                    // Cross-origin 제한으로 실패할 수 있음
+                }
+            }
+
+            // 주기적으로 스크롤 위치 저장
+            setInterval(() => {
+                if (splitMode === 'single') {
+                    saveScrollPosition(0);
+                } else {
+                    const maxFrames = splitMode === 'split2' ? 2 : splitMode === 'split3' ? 3 : 4;
+                    for (let i = 0; i < maxFrames; i++) {
+                        saveScrollPosition(i);
+                    }
+                }
+            }, 2000);
 
             // 드롭다운 토글
             function toggleSplitDropdown() {
@@ -693,7 +757,6 @@
                 const prevUrl = currentUrl;
                 const prevTitle = document.getElementById('standardTitle') ? document.getElementById('standardTitle').innerText.replace(/'/g, "\\'") : '포텐';
 
-                // 단일 모드로 전환
                 if (splitMode !== 'single') {
                     setSplitMode('single');
                 }
@@ -836,7 +899,6 @@
             // 프레임 선택 함수
             function selectFrame(index) {
                 selectedFrameIndex = index;
-                // 모든 프레임의 선택 상태 제거
                 document.querySelectorAll('.frame-container').forEach((container, i) => {
                     if (i === index) {
                         container.classList.add('selected');
@@ -848,7 +910,9 @@
 
             function loadSite(url, title) {
                 if (splitMode === 'single') {
-                    // 단일 모드: 기존 방식대로
+                    // 현재 스크롤 저장
+                    saveScrollPosition(0);
+                    
                     currentUrl = url;
                     frameUrls[0] = url;
                     frameTitles[0] = title;
@@ -866,9 +930,12 @@
                     frame.onload = () => {
                         frame.style.opacity = '1';
                         applyPcCrop();
+                        restoreScrollPosition(0);
                     };
                 } else {
-                    // 분할 모드: 선택된 프레임에 로드
+                    // 현재 프레임 스크롤 저장
+                    saveScrollPosition(selectedFrameIndex);
+                    
                     frameUrls[selectedFrameIndex] = url;
                     frameTitles[selectedFrameIndex] = title;
                     
@@ -886,6 +953,7 @@
                     frame.onload = () => {
                         frame.style.opacity = '1';
                         applyPcCrop();
+                        restoreScrollPosition(selectedFrameIndex);
                     };
                 }
                 
@@ -894,17 +962,24 @@
 
             function smartRefresh() {
                 if (splitMode === 'single') {
+                    saveScrollPosition(0);
                     const frame = document.getElementById('frame-0');
                     frame.src = currentUrl + (currentUrl.includes('?') ? '&' : '?') + 'r=' + Date.now();
-                    frame.onload = () => applyPcCrop();
+                    frame.onload = () => {
+                        applyPcCrop();
+                        restoreScrollPosition(0);
+                    };
                 } else {
-                    // 분할 모드에서는 현재 보이는 모든 프레임 새로고침
                     const maxFrames = splitMode === 'split2' ? 2 : splitMode === 'split3' ? 3 : 4;
                     for (let i = 0; i < maxFrames; i++) {
                         const frame = document.getElementById(`frame-${i}`);
                         if (frameUrls[i] && frame) {
+                            saveScrollPosition(i);
                             frame.src = frameUrls[i] + (frameUrls[i].includes('?') ? '&' : '?') + 'r=' + Date.now();
-                            frame.onload = () => applyPcCrop();
+                            frame.onload = () => {
+                                applyPcCrop();
+                                restoreScrollPosition(i);
+                            };
                         }
                     }
                 }
@@ -920,7 +995,6 @@
                         frame.style.height = `${100 + parseInt(val)}%`;
                     }
                 } else {
-                    // 분할 모드에서는 모든 프레임에 적용
                     const maxFrames = splitMode === 'split2' ? 2 : splitMode === 'split3' ? 3 : 4;
                     for (let i = 0; i < maxFrames; i++) {
                         const frame = document.getElementById(`frame-${i}`);
@@ -933,7 +1007,6 @@
             }
 
             function toggleCycleMode() {
-                // 분할 모드에서는 토글 불가
                 if (splitMode !== 'single') return;
                 
                 const btn = document.getElementById('modeToggleBtn');
@@ -952,7 +1025,6 @@
                     btn.innerText = 'Stop';
                     cycleIntervalTimer = setInterval(() => {
                         if (splitMode === 'single') {
-                            // 단일 모드
                             if (cycleMode === 'all') {
                                 const bms = JSON.parse(localStorage.getItem('myHubBookmarks'));
                                 let idx = bms.findIndex((bm) => bm.url === currentUrl);
@@ -962,13 +1034,16 @@
                                 smartRefresh();
                             }
                         } else {
-                            // 분할 모드 - 모든 프레임 새로고침
                             const maxFrames = splitMode === 'split2' ? 2 : splitMode === 'split3' ? 3 : 4;
                             for (let i = 0; i < maxFrames; i++) {
                                 const frame = document.getElementById(`frame-${i}`);
                                 if (frameUrls[i] && frame) {
+                                    saveScrollPosition(i);
                                     frame.src = frameUrls[i] + (frameUrls[i].includes('?') ? '&' : '?') + 'r=' + Date.now();
-                                    frame.onload = () => applyPcCrop();
+                                    frame.onload = () => {
+                                        applyPcCrop();
+                                        restoreScrollPosition(i);
+                                    };
                                 }
                             }
                         }
@@ -1025,19 +1100,15 @@
                 input.click();
             }
 
-            // 화면 분할 모드 설정
             function setSplitMode(mode) {
                 splitMode = mode;
-                selectedFrameIndex = 0; // 프레임 선택 인덱스 초기화
+                selectedFrameIndex = 0;
                 
-                // 드롭다운 닫기
                 document.getElementById('splitDropdown').classList.remove('show');
                 
-                // 드롭다운 아이템 활성화 상태 업데이트
                 document.querySelectorAll('.split-dropdown-item').forEach(item => item.classList.remove('active'));
                 event.target.classList.add('active');
                 
-                // 현재 버튼 텍스트 업데이트
                 const modeNames = {
                     'single': '1x1',
                     'split2': '1x2',
@@ -1047,7 +1118,6 @@
                 };
                 document.querySelector('.btn-split-current').innerText = modeNames[mode] + ' ▼';
                 
-                // 분할 모드일 때 자동으로 'One' 모드로 전환
                 if (mode !== 'single') {
                     cycleMode = 'single';
                     document.getElementById('modeToggleBtn').innerText = 'One';
@@ -1055,7 +1125,6 @@
                     document.getElementById('modeToggleBtn').style.opacity = '0.5';
                     document.getElementById('modeToggleBtn').style.cursor = 'not-allowed';
                 } else {
-                    // 단일 모드로 돌아올 때 원래대로 복구
                     document.getElementById('modeToggleBtn').disabled = false;
                     document.getElementById('modeToggleBtn').style.opacity = '1';
                     document.getElementById('modeToggleBtn').style.cursor = 'pointer';
@@ -1064,14 +1133,12 @@
                 renderFrames();
             }
 
-            // 프레임 렌더링
             function renderFrames() {
                 const wrap = document.getElementById('frameWrap');
                 wrap.className = `frame-wrap split-${splitMode}`;
                 wrap.innerHTML = '';
 
                 if (splitMode === 'single') {
-                    // 단일 모드
                     wrap.innerHTML = `
                         <div class="frame-container" id="container-0">
                             <div class="floating-title" id="title-container-0">
@@ -1081,8 +1148,13 @@
                         </div>
                     `;
                     currentUrl = frameUrls[0];
+                    
+                    const frame = document.getElementById('frame-0');
+                    frame.onload = () => {
+                        applyPcCrop();
+                        restoreScrollPosition(0);
+                    };
                 } else if (splitMode === 'split2') {
-                    // 세로 2분할 (1x2)
                     for (let i = 0; i < 2; i++) {
                         const container = document.createElement('div');
                         container.className = 'frame-container';
@@ -1090,7 +1162,7 @@
                         container.style.width = `${frameSizes.split2[i]}%`;
                         
                         container.innerHTML = `
-                            <div class="frame-overlay" onclick="selectFrame(${i})"></div>
+                            <div class="frame-selector" onclick="selectFrame(${i}); event.stopPropagation();">${i + 1}</div>
                             <div class="floating-title" id="title-container-${i}">
                                 <a id="title-${i}" href="${frameUrls[i] || '#'}" target="_blank">${frameTitles[i] || `프레임 ${i + 1}`}</a>
                             </div>
@@ -1099,7 +1171,16 @@
                         
                         wrap.appendChild(container);
                         
-                        // 리사이저 추가 (마지막 프레임 제외)
+                        const frame = document.getElementById(`frame-${i}`);
+                        if (frame && frameUrls[i]) {
+                            frame.onload = ((index) => {
+                                return () => {
+                                    applyPcCrop();
+                                    restoreScrollPosition(index);
+                                };
+                            })(i);
+                        }
+                        
                         if (i < 1) {
                             const resizer = document.createElement('div');
                             resizer.className = 'resizer vertical';
@@ -1109,10 +1190,8 @@
                             wrap.appendChild(resizer);
                         }
                     }
-                    // 첫 번째 프레임 선택
                     selectFrame(0);
                 } else if (splitMode === 'split3') {
-                    // 세로 3분할 (1x3)
                     for (let i = 0; i < 3; i++) {
                         const container = document.createElement('div');
                         container.className = 'frame-container';
@@ -1120,7 +1199,7 @@
                         container.style.width = `${frameSizes.split3[i]}%`;
                         
                         container.innerHTML = `
-                            <div class="frame-overlay" onclick="selectFrame(${i})"></div>
+                            <div class="frame-selector" onclick="selectFrame(${i}); event.stopPropagation();">${i + 1}</div>
                             <div class="floating-title" id="title-container-${i}">
                                 <a id="title-${i}" href="${frameUrls[i] || '#'}" target="_blank">${frameTitles[i] || `프레임 ${i + 1}`}</a>
                             </div>
@@ -1129,7 +1208,16 @@
                         
                         wrap.appendChild(container);
                         
-                        // 리사이저 추가 (마지막 프레임 제외)
+                        const frame = document.getElementById(`frame-${i}`);
+                        if (frame && frameUrls[i]) {
+                            frame.onload = ((index) => {
+                                return () => {
+                                    applyPcCrop();
+                                    restoreScrollPosition(index);
+                                };
+                            })(i);
+                        }
+                        
                         if (i < 2) {
                             const resizer = document.createElement('div');
                             resizer.className = 'resizer vertical';
@@ -1139,10 +1227,8 @@
                             wrap.appendChild(resizer);
                         }
                     }
-                    // 첫 번째 프레임 선택
                     selectFrame(0);
                 } else if (splitMode === 'horizontal') {
-                    // 세로 4분할 (1x4)
                     for (let i = 0; i < 4; i++) {
                         const container = document.createElement('div');
                         container.className = 'frame-container';
@@ -1150,7 +1236,7 @@
                         container.style.width = `${frameSizes.horizontal[i]}%`;
                         
                         container.innerHTML = `
-                            <div class="frame-overlay" onclick="selectFrame(${i})"></div>
+                            <div class="frame-selector" onclick="selectFrame(${i}); event.stopPropagation();">${i + 1}</div>
                             <div class="floating-title" id="title-container-${i}">
                                 <a id="title-${i}" href="${frameUrls[i] || '#'}" target="_blank">${frameTitles[i] || `프레임 ${i + 1}`}</a>
                             </div>
@@ -1159,7 +1245,16 @@
                         
                         wrap.appendChild(container);
                         
-                        // 리사이저 추가 (마지막 프레임 제외)
+                        const frame = document.getElementById(`frame-${i}`);
+                        if (frame && frameUrls[i]) {
+                            frame.onload = ((index) => {
+                                return () => {
+                                    applyPcCrop();
+                                    restoreScrollPosition(index);
+                                };
+                            })(i);
+                        }
+                        
                         if (i < 3) {
                             const resizer = document.createElement('div');
                             resizer.className = 'resizer vertical';
@@ -1169,10 +1264,8 @@
                             wrap.appendChild(resizer);
                         }
                     }
-                    // 첫 번째 프레임 선택
                     selectFrame(0);
                 } else if (splitMode === 'grid') {
-                    // 2x2 그리드
                     for (let i = 0; i < 4; i++) {
                         const container = document.createElement('div');
                         container.className = 'frame-container';
@@ -1191,7 +1284,7 @@
                         }
                         
                         container.innerHTML = `
-                            <div class="frame-overlay" onclick="selectFrame(${i})"></div>
+                            <div class="frame-selector" onclick="selectFrame(${i}); event.stopPropagation();">${i + 1}</div>
                             <div class="floating-title" id="title-container-${i}">
                                 <a id="title-${i}" href="${frameUrls[i] || '#'}" target="_blank">${frameTitles[i] || `프레임 ${i + 1}`}</a>
                             </div>
@@ -1199,9 +1292,18 @@
                         `;
                         
                         wrap.appendChild(container);
+                        
+                        const frame = document.getElementById(`frame-${i}`);
+                        if (frame && frameUrls[i]) {
+                            frame.onload = ((index) => {
+                                return () => {
+                                    applyPcCrop();
+                                    restoreScrollPosition(index);
+                                };
+                            })(i);
+                        }
                     }
                     
-                    // 가로 리사이저 (중간)
                     const hResizer = document.createElement('div');
                     hResizer.className = 'resizer horizontal';
                     hResizer.dataset.index = '0';
@@ -1209,7 +1311,6 @@
                     hResizer.addEventListener('mousedown', startResize);
                     wrap.appendChild(hResizer);
                     
-                    // 세로 리사이저 (왼쪽)
                     const vResizer1 = document.createElement('div');
                     vResizer1.className = 'resizer vertical';
                     vResizer1.dataset.index = '0';
@@ -1218,7 +1319,6 @@
                     vResizer1.addEventListener('mousedown', startResize);
                     wrap.appendChild(vResizer1);
                     
-                    // 세로 리사이저 (오른쪽)
                     const vResizer2 = document.createElement('div');
                     vResizer2.className = 'resizer vertical';
                     vResizer2.dataset.index = '1';
@@ -1228,17 +1328,15 @@
                     vResizer2.addEventListener('mousedown', startResize);
                     wrap.appendChild(vResizer2);
                     
-                    // 첫 번째 프레임 선택
                     selectFrame(0);
                 }
                 
-                // 프레임 렌더링 후 crop 적용
                 setTimeout(() => applyPcCrop(), 100);
             }
 
-            // 리사이즈 시작
             function startResize(e) {
                 e.preventDefault();
+                e.stopPropagation();
                 resizeState.isResizing = true;
                 resizeState.targetIndex = parseInt(e.target.dataset.index);
                 resizeState.direction = e.target.classList.contains('horizontal') ? 'horizontal' : 'vertical';
@@ -1250,7 +1348,6 @@
                 document.addEventListener('mouseup', stopResize);
             }
 
-            // 리사이즈 처리
             function handleResize(e) {
                 if (!resizeState.isResizing) return;
                 
@@ -1330,7 +1427,6 @@
                 }
             }
 
-            // 리사이즈 종료
             function stopResize(e) {
                 if (!resizeState.isResizing) return;
                 
