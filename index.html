@@ -95,6 +95,8 @@
                 color: var(--accent-blue);
                 text-align: center;
             }
+
+            /* 조건 검색 영역 스타일 */
             .search-area {
                 background: var(--glass-bg);
                 border-radius: 8px;
@@ -104,11 +106,27 @@
                 width: 100%;
                 box-sizing: border-box;
             }
+            
+            .search-select {
+                width: 100%;
+                background: #2c2c2e;
+                border: 1px solid var(--border-color);
+                color: white;
+                border-radius: 4px;
+                padding: 4px 6px;
+                font-size: 10px;
+                outline: none;
+                box-sizing: border-box;
+                margin-bottom: 4px;
+                cursor: pointer;
+            }
+            
             .search-input-group {
                 display: flex;
                 gap: 3px;
                 width: 100%;
             }
+            
             .search-input {
                 flex: 1;
                 min-width: 0;
@@ -121,15 +139,18 @@
                 outline: none;
                 box-sizing: border-box;
             }
+            
             .btn-search {
                 background: var(--accent-blue);
                 border: none;
                 color: white;
                 border-radius: 4px;
-                padding: 0 5px;
+                padding: 0 8px;
                 cursor: pointer;
                 flex-shrink: 0;
+                font-size: 12px;
             }
+
             .nav-header {
                 display: flex;
                 justify-content: space-between;
@@ -595,12 +616,23 @@
     <body>
         <div class="sidebar">
             <div class="brand-title">PRO HUB v5.4</div>
+            
+            <!-- 조건 검색 영역 -->
             <div class="search-area">
+                <select id="searchTarget" class="search-select">
+                    <option value="total">펨코</option>
+                    <option value="best">포텐</option>
+                    <option value="soccer">해축</option>
+                    <option value="humor">유머</option>
+                    <option value="news">축소통</option>
+                    <option value="url">URL</option>
+                </select>
                 <div class="search-input-group">
-                    <input type="text" id="searchKeyword" class="search-input" placeholder="Search" onkeypress="if (event.key === 'Enter') executeSearch();" />
+                    <input type="text" id="searchKeyword" class="search-input" placeholder="검색어 입력..." onkeypress="if (event.key === 'Enter') executeSearch();" />
                     <button class="btn-search" onclick="executeSearch()">🔍</button>
                 </div>
             </div>
+            
             <div class="nav-header">
                 <span class="nav-label">FAV</span>
                 <button id="gearBtn" class="btn-gear" onclick="toggleEditMode()">⚙️</button>
@@ -1078,13 +1110,59 @@
                 }
             }
 
-            function executeSearch() {
-                const input = document.getElementById('searchKeyword'),
-                    keyword = input.value.trim();
-                if (!keyword) return;
-                loadSite('https://m.fmkorea.com/search.php?act=IS&is_keyword=' + encodeURIComponent(keyword), 'Search Result');
-                input.value = '';
+            // 조건 검색 함수 수정
+            // 조건 검색 함수 수정
+function executeSearch() {
+    const target = document.getElementById('searchTarget').value;
+    const keyword = document.getElementById('searchKeyword').value.trim();
+    
+    if (!keyword) return;
+    
+    let url = '';
+    let title = '';
+    
+    if (target === 'url') {
+        // URL 직접 입력
+        url = keyword;
+        if (!/^https?:\/\//i.test(url)) {
+            url = 'https://' + url;
+        }
+        title = 'Custom URL';
+    } else {
+        // 게시판별 검색
+        const encodedKeyword = encodeURIComponent(keyword);
+        const boardMap = {
+            'total': { 
+                url: `https://m.fmkorea.com/search.php?act=IS&is_keyword=${encodedKeyword}#gsc.tab=&gsc.q=leehs&gsc.sort=date&`, 
+                title: '펨코 검색' 
+            },
+            'best': { 
+                url: `https://m.fmkorea.com/search.php?mid=best&search_target=title_content&search_keyword=${encodedKeyword}`, 
+                title: '포텐 검색' 
+            },
+            'soccer': { 
+                url: `https://m.fmkorea.com/search.php?mid=football_world&category=&search_target=title&search_keyword=${encodedKeyword}`, 
+                title: '해축 검색' 
+            },
+            'humor': { 
+                url: `https://m.fmkorea.com/search.php?mid=humor&category=&search_target=title_content&search_keyword=${encodedKeyword}`, 
+                title: '유머 검색' 
+            },
+            'news': { 
+                url: `https://m.fmkorea.com/search.php?mid=football_news&category=&search_target=title_content&search_keyword=${encodedKeyword}`, 
+                title: '축소통 검색' 
             }
+        };
+        
+        const board = boardMap[target];
+        url = board.url;
+        title = board.title;
+    }
+    
+    loadSite(url, title);
+    document.getElementById('searchKeyword').value = '';
+}
+
 
             function goToMobileSite() {
                 window.location.href = 'https://netflix7774.github.io/mobile/index.html';
