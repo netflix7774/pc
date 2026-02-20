@@ -739,10 +739,41 @@
                 opacity: 0.95;
             }
 
+            /* ★ 시간 텍스트 색상 변경: 밝고 잘 보이게 */
             .datetime-time {
                 font-size: 10px;
-                opacity: 0.75;
-                color: var(--accent-blue);
+                opacity: 1;
+                color: #7ee8a2;
+                font-weight: 700;
+            }
+
+            /* ★ 다음 북마크 버튼 */
+            #nextBookmarkBtn {
+                background: rgba(255, 255, 255, 0.08);
+                backdrop-filter: blur(15px);
+                border: 1px solid rgba(255, 255, 255, 0.2);
+                color: var(--text-primary);
+                padding: 5px 12px;
+                border-radius: 8px;
+                font-size: 11px;
+                font-weight: 700;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                gap: 6px;
+                transition: all 0.2s;
+                white-space: nowrap;
+            }
+
+            #nextBookmarkBtn:hover {
+                background: rgba(48, 209, 88, 0.2);
+                border-color: var(--accent-green);
+                color: var(--accent-green);
+                transform: scale(1.05);
+            }
+
+            #nextBookmarkBtn:active {
+                transform: scale(0.97);
             }
         </style>
     </head>
@@ -810,6 +841,8 @@
                         <button id="cycleBtn" class="btn-top-action" onclick="toggleCycle()">Go</button>
                     </div>
                     <button onclick="smartRefresh()" class="btn-top-action">↻</button>
+                    <!-- ★ 다음 북마크 버튼 -->
+                    <button id="nextBookmarkBtn" onclick="loadNextBookmark()" title="다음 북마크로 이동">▶</button>
                     <div class="datetime-display" id="datetimeDisplay">
                         <span class="datetime-icon">🕐</span>
                         <div class="datetime-text">
@@ -886,6 +919,17 @@
                 vertical2: [50, 50],
                 grid: [50, 50, 50, 50]
             };
+
+            // ★ 다음 북마크 로드 함수
+            function loadNextBookmark() {
+                const bms = JSON.parse(localStorage.getItem('myHubBookmarks')) || [];
+                if (bms.length === 0) return;
+
+                // 현재 URL 기준으로 다음 북마크 찾기
+                let idx = bms.findIndex(bm => bm.url === currentUrl);
+                let next = (idx + 1) % bms.length;
+                loadSite(bms[next].url, bms[next].name);
+            }
 
             // 다크모드 토글 함수
             function toggleDarkMode() {
