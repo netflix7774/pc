@@ -775,6 +775,12 @@
             #nextBookmarkBtn:active {
                 transform: scale(0.97);
             }
+
+            #nextBookmarkBtn:disabled {
+                opacity: 0.3;
+                cursor: not-allowed;
+                pointer-events: none;
+            }
         </style>
     </head>
     <body>
@@ -1639,6 +1645,10 @@
                     'grid': '2x2'
                 };
                 document.querySelector('.btn-split-current').innerText = modeNames[mode] + ' ▼';
+                
+                // 1x1 모드에서만 다음 북마크 버튼 활성화
+                const nextBtn = document.getElementById('nextBookmarkBtn');
+                nextBtn.disabled = (mode !== 'single');
                 
                 renderFrames();
             }
